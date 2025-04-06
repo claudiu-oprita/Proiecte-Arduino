@@ -1,0 +1,139 @@
+#define STEP_PIN 5
+#define DIR_PIN 4
+#define ENABLE_PIN 6
+#define BUTTON_DIRECTION_PIN 9
+#define BUTTON_ON_OFF_PIN 12
+
+bool direction = true;     // Direcția inițială (true = înainte, false = înapoi)
+bool motorOn = true;       // Starea motorului (true = pornit, false = oprit)
+bool lastDirectionButtonState = HIGH;
+bool lastOnOffButtonState = HIGH;
+unsigned long lastDebounceTimeDirection = 0;
+unsigned long lastDebounceTimeOnOff = 0;
+const int debounceDelay = 50;
+
+void setup() {
+    pinMode(STEP_PIN, OUTPUT);
+    pinMode(DIR_PIN, OUTPUT);
+    pinMode(ENABLE_PIN, OUTPUT);
+    pinMode(BUTTON_DIRECTION_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_ON_OFF_PIN, INPUT_PULLUP);
+
+    digitalWrite(ENABLE_PIN, LOW);  // Activează driverul A4988
+    digitalWrite(DIR_PIN, direction); // Setează direcția inițială
+}
+
+void loop() {
+    // Gestionare buton pentru schimbarea direcției
+    bool directionButtonState = digitalRead(BUTTON_DIRECTION_PIN);
+    if (directionButtonState == LOW && lastDirectionButtonState == HIGH && (millis() - lastDebounceTimeDirection) > debounceDelay) {
+        direction = !direction;  // Schimbă direcția motorului
+        digitalWrite(DIR_PIN, direction); // Aplică noua direcție
+        lastDebounceTimeDirection = millis();
+    }
+    lastDirectionButtonState = directionButtonState;
+
+    // Gestionare buton pentru pornirea/oprirea motorului
+    bool onOffButtonState = digitalRead(BUTTON_ON_OFF_PIN);
+    if (onOffButtonState == LOW && lastOnOffButtonState == HIGH && (millis() - lastDebounceTimeOnOff) > debounceDelay) {
+        motorOn = !motorOn;  // Comută între PORNIT/OPRIT
+        lastDebounceTimeOnOff = millis();
+    }
+    lastOnOffButtonState = onOffButtonState;
+
+    // Motorul face pași doar dacă este pornit
+    if (motorOn) {
+        digitalWrite(STEP_PIN, HIGH);
+        delayMicroseconds(2000);  // Ajustează viteza pașilor dacă este necesar
+        digitalWrite(STEP_PIN, LOW);
+        delayMicroseconds(2000);  // Ajustează viteza pașilor dacă este necesar
+    }
+}
+
+
+
+
+cod 2
+
+
+
+#define STEP_PIN 5
+#define DIR_PIN 4
+#define ENABLE_PIN 6
+#define BUTTON_DIRECTION_PIN 9
+#define BUTTON_ON_OFF_PIN 12
+#define BUTTON_SPEED_UP 2
+#define BUTTON_SPEED_DOWN 3
+
+bool direction = true;     // Direcția inițială (true = înainte, false = înapoi)
+bool motorOn = true;       // Starea motorului (true = pornit, false = oprit)
+bool lastDirectionButtonState = HIGH;
+bool lastOnOffButtonState = HIGH;
+bool lastSpeedUpButtonState = HIGH;
+bool lastSpeedDownButtonState = HIGH;
+unsigned long lastDebounceTimeDirection = 0;
+unsigned long lastDebounceTimeOnOff = 0;
+unsigned long lastDebounceTimeSpeedUp = 0;
+unsigned long lastDebounceTimeSpeedDown = 0;
+const int debounceDelay = 50;
+int stepDelay = 2000; // Delay-ul inițial pentru viteză
+
+void setup() {
+    pinMode(STEP_PIN, OUTPUT);
+    pinMode(DIR_PIN, OUTPUT);
+    pinMode(ENABLE_PIN, OUTPUT);
+    pinMode(BUTTON_DIRECTION_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_ON_OFF_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_SPEED_UP, INPUT_PULLUP);
+    pinMode(BUTTON_SPEED_DOWN, INPUT_PULLUP);
+
+    digitalWrite(ENABLE_PIN, LOW);  // Activează driverul A4988
+    digitalWrite(DIR_PIN, direction); // Setează direcția inițială
+}
+
+void loop() {
+    // Gestionare buton pentru schimbarea direcției
+    bool directionButtonState = digitalRead(BUTTON_DIRECTION_PIN);
+    if (directionButtonState == LOW && lastDirectionButtonState == HIGH && (millis() - lastDebounceTimeDirection) > debounceDelay) {
+        direction = !direction;  // Schimbă direcția motorului
+        digitalWrite(DIR_PIN, direction); // Aplică noua direcție
+        lastDebounceTimeDirection = millis();
+    }
+    lastDirectionButtonState = directionButtonState;
+
+    // Gestionare buton pentru pornirea/oprirea motorului
+    bool onOffButtonState = digitalRead(BUTTON_ON_OFF_PIN);
+    if (onOffButtonState == LOW && lastOnOffButtonState == HIGH && (millis() - lastDebounceTimeOnOff) > debounceDelay) {
+        motorOn = !motorOn;  // Comută între PORNIT/OPRIT
+        lastDebounceTimeOnOff = millis();
+    }
+    lastOnOffButtonState = onOffButtonState;
+
+    // Gestionare buton pentru creșterea vitezei
+    bool speedUpButtonState = digitalRead(BUTTON_SPEED_UP);
+    if (speedUpButtonState == LOW && lastSpeedUpButtonState == HIGH && (millis() - lastDebounceTimeSpeedUp) > debounceDelay) {
+        if (stepDelay > 500) {  // Limităm viteza maximă
+            stepDelay -= 500;  // Crește viteza (reduce delay-ul)
+        }
+        lastDebounceTimeSpeedUp = millis();
+    }
+    lastSpeedUpButtonState = speedUpButtonState;
+
+    // Gestionare buton pentru scăderea vitezei
+    bool speedDownButtonState = digitalRead(BUTTON_SPEED_DOWN);
+    if (speedDownButtonState == LOW && lastSpeedDownButtonState == HIGH && (millis() - lastDebounceTimeSpeedDown) > debounceDelay) {
+        if (stepDelay < 10000) {  // Limităm viteza minimă
+            stepDelay += 500;  // Scade viteza (crește delay-ul)
+        }
+        lastDebounceTimeSpeedDown = millis();
+    }
+    lastSpeedDownButtonState = speedDownButtonState;
+
+    // Motorul face pași doar dacă este pornit
+    if (motorOn) {
+        digitalWrite(STEP_PIN, HIGH);
+        delayMicroseconds(stepDelay);
+        digitalWrite(STEP_PIN, LOW);
+        delayMicroseconds(stepDelay);
+    }
+}
