@@ -1,0 +1,108 @@
+#include <Servo.h>
+#include <LiquidCrystal.h>
+
+Servo bariera;
+LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
+
+const int ledVerde = 13;
+const int ledRosu = 12;
+const int ledGalben = 11;
+
+const int senzorIntrare = 10;
+const int senzorIesire = 8;
+
+const int pinServo = 9;
+
+const int maxLocuri = 5;
+int locuriOcupate = 0;
+
+bool barieraActiva = false;
+unsigned long ultimaDetectieIntrare = 0;
+unsigned long ultimaDetectieIesire = 0;
+const unsigned long timpDebounce = 1500;
+
+void ridicaBariera() {
+  bariera.write(90);
+  digitalWrite(ledVerde, HIGH);
+  digitalWrite(ledRosu, LOW);
+  digitalWrite(ledGalben, LOW);
+}
+
+void coboaraBariera() {
+  bariera.write(0);
+  digitalWrite(ledVerde, LOW);
+  digitalWrite(ledRosu, HIGH);
+  if (locuriOcupate >= maxLocuri) {
+    digitalWrite(ledGalben, HIGH);
+  } else {
+    digitalWrite(ledGalben, LOW);
+  }
+}
+
+void actualizeazaLCD() {
+  lcd.clear();
+  if (locuriOcupate >= maxLocuri) {
+    lcd.setCursor(0, 0);
+    lcd.print("Parcare plina");
+    lcd.setCursor(0, 1);
+    lcd.print("Reveniti!");
+  } else {
+    lcd.setCursor(0, 0);
+    lcd.print("Locuri libere:");
+    lcd.setCursor(0, 1);
+    lcd.print(maxLocuri - locuriOcupate);
+  }
+}
+
+void setup() {
+  pinMode(ledVerde, OUTPUT);
+  pinMode(ledRosu, OUTPUT);
+  pinMode(ledGalben, OUTPUT);
+
+  pinMode(senzorIntrare, INPUT);
+  pinMode(senzorIesire, INPUT);
+
+  bariera.attach(pinServo);
+  coboaraBariera();
+
+  lcd.begin(16, 2);
+  actualizeazaLCD();
+}
+
+void loop() {
+  unsigned long timpulCurent = millis();
+
+  if (barieraActiva) {
+    return;
+  }
+
+  if (digitalRead(senzorIntrare) == LOW && timpulCurent - ultimaDetectieIntrare > timpDebounce && locuriOcupate < maxLocuri) {
+    barieraActiva = true;
+    ultimaDetectieIntrare = timpulCurent;
+
+    ridicaBariera();
+    delay(5000); 
+    locuriOcupate++;
+    coboaraBariera();
+    actualizeazaLCD();
+    delay(1000);
+
+    barieraActiva = false;
+    return;
+  }
+
+  if (digitalRead(senzorIesire) == LOW && timpulCurent - ultimaDetectieIesire > timpDebounce && locuriOcupate > 0) {
+    barieraActiva = true;
+    ultimaDetectieIesire = timpulCurent;
+
+    ridicaBariera();
+    delay(5000); 
+    locuriOcupate--;
+    coboaraBariera();
+    actualizeazaLCD();
+    delay(1000);
+
+    barieraActiva = false;
+    return;
+  }
+}
